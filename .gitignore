@@ -36,6 +36,7 @@ a.out
 .vscode/
 .idea/
 *.code-workspace
+.clang-format
 
 # ===================================================================== 
 # LINUX / WSL / SYSTEM

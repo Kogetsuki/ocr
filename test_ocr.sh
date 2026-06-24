@@ -219,7 +219,7 @@ ${YELLOW}Options:${NC}
   help      - Display this help
 
 ${YELLOW}Important:${NC}
-  • Executer from root folder
+  • Execute from root folder
   • WSL2 with WSLg or X11 config needed
   • Use 'sudo' to install dependencies
 
