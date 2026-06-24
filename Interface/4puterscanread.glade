@@ -42,7 +42,7 @@
             </child>
 
             <!-- Quit button -->
-            <child type="end">
+            <child>
               <object class="GtkButton" id="quit_button">
                 <property name="label">Quit</property>
               </object>
