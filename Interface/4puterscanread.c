@@ -289,8 +289,10 @@ void on_save_clicked()
 
 int main(void)
 {
+  // Initialization
   gtk_init(NULL, NULL);
 
+  // Load CSS theme
   GtkCssProvider *provider = gtk_css_provider_new();
   gtk_css_provider_load_from_path(provider, "style.css", NULL);
 
@@ -298,8 +300,10 @@ int main(void)
       gdk_screen_get_default(), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER
   );
 
+  // Build window
   GtkBuilder *builder = gtk_builder_new_from_file("4puterscanread.glade");
 
+  // Retrieve all objects
   window = GTK_WINDOW(gtk_builder_get_object(builder, "main_window"));
   spinner = GTK_SPINNER(gtk_builder_get_object(builder, "spinner"));
   main_paned = GTK_PANED(gtk_builder_get_object(builder, "main_paned"));
@@ -312,21 +316,27 @@ int main(void)
   save_button = GTK_BUTTON(gtk_builder_get_object(builder, "save_button"));
   quit_button = GTK_BUTTON(gtk_builder_get_object(builder, "quit_button"));
 
+  // Prevent panel resizing
   gtk_widget_set_sensitive(GTK_WIDGET(main_paned), FALSE);
 
+  // Buttons connection
   g_signal_connect(open_button, "clicked", G_CALLBACK(on_open_clicked), NULL);
   g_signal_connect(ocr_button, "clicked", G_CALLBACK(on_ocr_clicked), NULL);
   g_signal_connect(save_button, "clicked", G_CALLBACK(on_save_clicked), NULL);
   g_signal_connect(quit_button, "clicked", G_CALLBACK(gtk_main_quit), NULL);
 
+  // Panel size allocation connction
   g_signal_connect(image_panel, "size-allocate", G_CALLBACK(on_image_panel_size_allocate), NULL);
 
+  // Quit connection
   g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
+  // Display all
   gtk_widget_show_all(GTK_WIDGET(window));
   gtk_widget_show(GTK_WIDGET(spinner));
   gtk_main();
 
+  // Free resources
   g_free(selected_file);
 
   if (original_pixbuf)
