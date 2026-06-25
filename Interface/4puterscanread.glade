@@ -51,7 +51,22 @@
           </object>
         </child>
 
-        <!-- ` Area -->
+        <!-- Spinner -->
+        <child>
+          <object class="GtkBox">
+            <property name="orientation">horizontal</property>
+            <property name="spacing">6</property>
+
+            <child>
+              <object class="GtkSpinner" id="spinner">
+                <property name="visible">True</property>
+              </object>
+            </child>
+
+          </object>
+        </child>
+
+        <!-- Main Area -->
         <child>
           <object class="GtkPaned">
 

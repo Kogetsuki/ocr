@@ -4,8 +4,9 @@
 #include "../XOR/launch.h"
 
 static GtkWindow *window;
+static GtkSpinner *spinner;
 
-static GtkImage    *image_preview;
+static GtkImage *image_preview;
 static GtkTextView *text_view;
 
 static GtkButton *open_button;
@@ -16,6 +17,101 @@ static GtkButton *quit_button;
 static GtkLabel *status_label;
 
 static gchar *selected_file = NULL;
+
+// ========================================================================
+// OCR thread data
+// ========================================================================
+
+typedef struct
+{
+  gchar *file;
+} OcrData;
+
+// ========================================================================
+// UI update after OCR success
+// ========================================================================
+
+static gboolean update_text_view(gpointer data)
+{
+  char *content = (char *) data;
+
+  GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
+  gtk_text_buffer_set_text(buffer, content, -1);
+
+  free(content);
+
+  gtk_spinner_stop(spinner);
+  gtk_label_set_text(status_label, "OCR completed");
+  gtk_widget_set_sensitive(GTK_WIDGET(save_button), TRUE);
+  gtk_widget_set_sensitive(GTK_WIDGET(ocr_button), TRUE);
+
+  return FALSE;
+}
+
+// ========================================================================
+// UI update after OCR failure
+// ========================================================================
+
+static gboolean ocr_failed(gpointer data)
+{
+  (void) data;
+
+  gtk_spinner_stop(spinner);
+  gtk_label_set_text(status_label, "Unable to read OCR output");
+  gtk_widget_set_sensitive(GTK_WIDGET(ocr_button), TRUE);
+
+  return FALSE;
+}
+
+// ========================================================================
+// OCR worker thread
+// ========================================================================
+
+static gpointer ocr_thread(gpointer data)
+{
+  OcrData *d = (OcrData *) data;
+
+  seg(d->file);
+  launcher("../Treatment/.car");
+
+  FILE *file = fopen("finalresult.txt", "r");
+
+  if (!file)
+  {
+    g_idle_add(ocr_failed, NULL);
+
+    g_free(d->file);
+    g_free(d);
+
+    return NULL;
+  }
+
+  fseek(file, 0, SEEK_END);
+  long size = ftell(file);
+  rewind(file);
+
+  char *content = malloc(size + 1);
+  if (!content)
+  {
+    fclose(file);
+    g_idle_add(ocr_failed, NULL);
+  }
+
+  else
+  {
+    fread(content, 1, size, file);
+    content[size] = '\0';
+
+    fclose(file);
+
+    g_idle_add(update_text_view, content);
+  }
+
+  g_free(d->file);
+  g_free(d);
+
+  return NULL;
+}
 
 // ========================================================================
 // Open image dialog
@@ -65,35 +161,13 @@ void on_ocr_clicked()
     return;
 
   gtk_label_set_text(status_label, "Running OCR...");
+  gtk_widget_set_sensitive(GTK_WIDGET(ocr_button), FALSE);
+  gtk_spinner_start(spinner);
 
-  // Existing pipeline
-  seg(selected_file);
-  launcher("../Treatment/.car");
+  OcrData *d = g_malloc(sizeof(OcrData));
+  d->file = g_strdup(selected_file);
 
-  // Read OCR result
-  FILE *file = fopen("finalresult.txt", "r");
-  if (!file)
-  {
-    gtk_label_set_text(status_label, "Unable to read OCR output");
-    return;
-  }
-
-  fseek(file, 0, SEEK_END);
-  long size = ftell(file);
-  rewind(file);
-
-  char *content = malloc(size + 1);
-  fread(content, 1, size, file);
-  content[size] = '\0';
-  fclose(file);
-
-  GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
-  gtk_text_buffer_set_text(buffer, content, -1);
-
-  free(content);
-
-  gtk_widget_set_sensitive(GTK_WIDGET(save_button), TRUE);
-  gtk_label_set_text(status_label, "OCR completed");
+  g_thread_new("ocr_thread", ocr_thread, d);
 }
 
 // ========================================================================
@@ -123,7 +197,6 @@ void on_save_clicked()
     GtkTextIter end;
 
     gtk_text_buffer_get_bounds(buffer, &start, &end);
-
     gchar *text = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
 
     FILE *f = fopen(filename, "w");
@@ -152,14 +225,15 @@ int main(void)
 
   GtkBuilder *builder = gtk_builder_new_from_file("4puterscanread.glade");
 
-  window        = GTK_WINDOW(gtk_builder_get_object(builder, "main_window"));
+  window = GTK_WINDOW(gtk_builder_get_object(builder, "main_window"));
+  spinner = GTK_SPINNER(gtk_builder_get_object(builder, "spinner"));
   image_preview = GTK_IMAGE(gtk_builder_get_object(builder, "image_preview"));
-  text_view     = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "text_view"));
-  status_label  = GTK_LABEL(gtk_builder_get_object(builder, "status_label"));
-  open_button   = GTK_BUTTON(gtk_builder_get_object(builder, "open_button"));
-  ocr_button    = GTK_BUTTON(gtk_builder_get_object(builder, "ocr_button"));
-  save_button   = GTK_BUTTON(gtk_builder_get_object(builder, "save_button"));
-  quit_button   = GTK_BUTTON(gtk_builder_get_object(builder, "quit_button"));
+  text_view = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "text_view"));
+  status_label = GTK_LABEL(gtk_builder_get_object(builder, "status_label"));
+  open_button = GTK_BUTTON(gtk_builder_get_object(builder, "open_button"));
+  ocr_button = GTK_BUTTON(gtk_builder_get_object(builder, "ocr_button"));
+  save_button = GTK_BUTTON(gtk_builder_get_object(builder, "save_button"));
+  quit_button = GTK_BUTTON(gtk_builder_get_object(builder, "quit_button"));
 
   g_signal_connect(open_button, "clicked", G_CALLBACK(on_open_clicked), NULL);
   g_signal_connect(ocr_button, "clicked", G_CALLBACK(on_ocr_clicked), NULL);
@@ -169,9 +243,11 @@ int main(void)
   g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
   gtk_widget_show_all(GTK_WIDGET(window));
+  gtk_widget_show(GTK_WIDGET(spinner));
   gtk_main();
 
   g_free(selected_file);
+  g_object_unref(builder);
 
   return 0;
 }
