@@ -6,6 +6,8 @@
 static GtkWindow *window;
 static GtkSpinner *spinner;
 
+static GtkPaned *main_paned;
+static GtkWidget *image_panel;
 static GtkImage *image_preview;
 static GtkTextView *text_view;
 
@@ -17,6 +19,7 @@ static GtkButton *quit_button;
 static GtkLabel *status_label;
 
 static gchar *selected_file = NULL;
+static GdkPixbuf *original_pixbuf = NULL;
 
 // ========================================================================
 // OCR thread data
@@ -26,6 +29,62 @@ typedef struct
 {
   gchar *file;
 } OcrData;
+
+// ========================================================================
+// Rescale loaded image
+// ========================================================================
+
+static void update_image_scaling(void)
+{
+  if (!original_pixbuf || !image_panel)
+    return;
+
+  // Use the widget's natural allocated size
+  GtkAllocation allocation;
+  gtk_widget_get_allocation(image_panel, &allocation);
+
+  gint avail_w = allocation.width - 24;
+  gint avail_h = allocation.height - 24;
+
+  // Widget not yet realized - fall back to a fixed default
+  if (avail_w <= 1 || avail_h <= 1)
+  {
+    avail_w = 560;
+    avail_h = 650;
+  }
+
+  gint src_w = gdk_pixbuf_get_width(original_pixbuf);
+  gint src_h = gdk_pixbuf_get_height(original_pixbuf);
+
+  if (src_w <= 0 || src_h <= 0)
+    return;
+
+  gdouble scale = MIN((gdouble) avail_w / src_w, (gdouble) avail_h / src_h);
+
+  gint new_w = MAX(1, (gint) (src_w * scale));
+  gint new_h = MAX(1, (gint) (src_h * scale));
+
+  GdkPixbuf *scaled = gdk_pixbuf_scale_simple(original_pixbuf, new_w, new_h, GDK_INTERP_BILINEAR);
+
+  if (scaled)
+  {
+    gtk_image_set_from_pixbuf(image_preview, scaled);
+    g_object_unref(scaled);
+  }
+}
+
+// ========================================================================
+// Re-fit image when panel changes size
+// ========================================================================
+
+static void on_image_panel_size_allocate(GtkWidget *widget, GtkAllocation *allocation, gpointer data)
+{
+  (void) widget;
+  (void) allocation;
+  (void) data;
+
+  update_image_scaling();
+}
 
 // ========================================================================
 // UI update after OCR success
@@ -144,7 +203,12 @@ void on_open_clicked()
     g_free(selected_file);
 
     selected_file = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
-    gtk_image_set_from_file(image_preview, selected_file);
+    if (original_pixbuf)
+      g_object_unref(original_pixbuf);
+
+    original_pixbuf = gdk_pixbuf_new_from_file(selected_file, NULL);
+    update_image_scaling();
+
     gtk_widget_set_sensitive(GTK_WIDGET(ocr_button), TRUE);
     gtk_label_set_text(status_label, "Image loaded");
   }
@@ -223,10 +287,19 @@ int main(void)
 {
   gtk_init(NULL, NULL);
 
+  GtkCssProvider *provider = gtk_css_provider_new();
+  gtk_css_provider_load_from_path(provider, "style.css", NULL);
+
+  gtk_style_context_add_provider_for_screen(
+      gdk_screen_get_default(), GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_USER
+  );
+
   GtkBuilder *builder = gtk_builder_new_from_file("4puterscanread.glade");
 
   window = GTK_WINDOW(gtk_builder_get_object(builder, "main_window"));
   spinner = GTK_SPINNER(gtk_builder_get_object(builder, "spinner"));
+  main_paned = GTK_PANED(gtk_builder_get_object(builder, "main_paned"));
+  image_panel = GTK_WIDGET(gtk_builder_get_object(builder, "image_panel"));
   image_preview = GTK_IMAGE(gtk_builder_get_object(builder, "image_preview"));
   text_view = GTK_TEXT_VIEW(gtk_builder_get_object(builder, "text_view"));
   status_label = GTK_LABEL(gtk_builder_get_object(builder, "status_label"));
@@ -235,10 +308,14 @@ int main(void)
   save_button = GTK_BUTTON(gtk_builder_get_object(builder, "save_button"));
   quit_button = GTK_BUTTON(gtk_builder_get_object(builder, "quit_button"));
 
+  gtk_widget_set_sensitive(GTK_WIDGET(main_paned), FALSE);
+
   g_signal_connect(open_button, "clicked", G_CALLBACK(on_open_clicked), NULL);
   g_signal_connect(ocr_button, "clicked", G_CALLBACK(on_ocr_clicked), NULL);
   g_signal_connect(save_button, "clicked", G_CALLBACK(on_save_clicked), NULL);
   g_signal_connect(quit_button, "clicked", G_CALLBACK(gtk_main_quit), NULL);
+
+  g_signal_connect(image_panel, "size-allocate", G_CALLBACK(on_image_panel_size_allocate), NULL);
 
   g_signal_connect(window, "destroy", G_CALLBACK(gtk_main_quit), NULL);
 
@@ -247,6 +324,10 @@ int main(void)
   gtk_main();
 
   g_free(selected_file);
+
+  if (original_pixbuf)
+    g_object_unref(original_pixbuf);
+
   g_object_unref(builder);
 
   return 0;

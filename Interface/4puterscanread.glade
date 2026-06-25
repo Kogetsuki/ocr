@@ -3,59 +3,136 @@
   <requires lib="gtk+" version="3.20" />
 
   <object class="GtkWindow" id="main_window">
-    <!-- Window size -->
     <property name="default-width">1200</property>
     <property name="default-height">700</property>
-    <!-- Title -->
     <property name="title">OCR</property>
 
-    <!-- Wrapper -->
+    <!-- ================= HEADER BAR (real titlebar, single bar) ================= -->
+    <child type="titlebar">
+      <object class="GtkHeaderBar" id="headerbar">
+        <property name="visible">True</property>
+        <property name="title">OCR</property>
+        <property name="show-close-button">False</property>
+        <property name="spacing">6</property>
+
+        <!-- LEFT SIDE BUTTONS -->
+        <child>
+          <object class="GtkButton" id="open_button">
+            <property name="visible">True</property>
+            <property name="label">Open</property>
+          </object>
+          <packing>
+            <property name="pack-type">start</property>
+          </packing>
+        </child>
+
+        <child>
+          <object class="GtkButton" id="ocr_button">
+            <property name="visible">True</property>
+            <property name="label">Run OCR</property>
+            <property name="sensitive">False</property>
+          </object>
+          <packing>
+            <property name="pack-type">start</property>
+          </packing>
+        </child>
+
+        <child>
+          <object class="GtkButton" id="save_button">
+            <property name="visible">True</property>
+            <property name="label">Save</property>
+            <property name="sensitive">False</property>
+          </object>
+          <packing>
+            <property name="pack-type">start</property>
+          </packing>
+        </child>
+
+        <!-- RIGHT SIDE -->
+        <child>
+          <object class="GtkButton" id="quit_button">
+            <property name="visible">True</property>
+            <property name="label">Quit</property>
+          </object>
+          <packing>
+            <property name="pack-type">end</property>
+          </packing>
+        </child>
+
+      </object>
+    </child>
+
+    <!-- ================= WINDOW CONTENT ================= -->
     <child>
       <object class="GtkBox">
+        <property name="visible">True</property>
         <property name="orientation">vertical</property>
 
-        <!-- Toolbar -->
+        <!-- ================= MAIN AREA ================= -->
         <child>
-          <object class="GtkHeaderBar">
+          <object class="GtkPaned" id="main_paned">
+            <property name="visible">True</property>
+            <property name="wide-handle">True</property>
+            <property name="position">595</property>
+            <property name="position-set">True</property>
 
-            <!-- Import image button -->
+            <!-- IMAGE — same resize weight as the text panel, so both
+                 sides stay equal in size and grow/shrink together -->
             <child>
-              <object class="GtkButton" id="open_button">
-                <property name="label">Open Image</property>
+              <object class="GtkScrolledWindow" id="image_panel">
+                <property name="visible">True</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <property name="shadow-type">none</property>
+                <property name="hscrollbar-policy">never</property>
+                <property name="vscrollbar-policy">never</property>
+
+                <child>
+                  <object class="GtkImage" id="image_preview">
+                    <property name="visible">True</property>
+                  </object>
+                </child>
+
               </object>
+              <packing>
+                <property name="resize">True</property>
+                <property name="shrink">True</property>
+              </packing>
             </child>
 
-            <!-- Run OCR on selected image button -->
+            <!-- TEXT -->
             <child>
-              <object class="GtkButton" id="ocr_button">
-                <property name="label">Run OCR</property>
-                <property name="sensitive">False</property>
-              </object>
-            </child>
+              <object class="GtkScrolledWindow">
+                <property name="visible">True</property>
+                <property name="hexpand">True</property>
+                <property name="vexpand">True</property>
+                <property name="shadow-type">none</property>
 
-            <!-- Save extracted text button -->
-            <child>
-              <object class="GtkButton" id="save_button">
-                <property name="label">Save Text</property>
-                <property name="sensitive">False</property>
-              </object>
-            </child>
+                <child>
+                  <object class="GtkTextView" id="text_view">
+                    <property name="visible">True</property>
+                    <property name="wrap-mode">word-char</property>
+                    <property name="monospace">True</property>
+                  </object>
+                </child>
 
-            <!-- Quit button -->
-            <child>
-              <object class="GtkButton" id="quit_button">
-                <property name="label">Quit</property>
               </object>
+              <packing>
+                <property name="resize">True</property>
+                <property name="shrink">True</property>
+              </packing>
             </child>
 
           </object>
         </child>
 
-        <!-- Spinner -->
+        <!-- ================= STATUS BAR ================= -->
         <child>
-          <object class="GtkBox">
+          <object class="GtkBox" id="status_bar">
+            <property name="visible">True</property>
             <property name="orientation">horizontal</property>
-            <property name="spacing">6</property>
+            <property name="spacing">10</property>
+            <property name="margin">10</property>
 
             <child>
               <object class="GtkSpinner" id="spinner">
@@ -63,44 +140,13 @@
               </object>
             </child>
 
-          </object>
-        </child>
-
-        <!-- Main Area -->
-        <child>
-          <object class="GtkPaned">
-
-            <!-- LEFT: display selected image -->
             <child>
-              <object class="GtkScrolledWindow">
-                <!-- Adaptative size -->
-                <property name="hexpand">True</property>
-                <property name="vexpand">True</property>
-
-                <!-- Image placeholder -->
-                <child>
-                  <object class="GtkImage" id="image_preview" />
-                </child>
-
+              <object class="GtkLabel" id="status_label">
+                <property name="visible">True</property>
+                <property name="label">Ready</property>
               </object>
             </child>
 
-            <!-- RIGHT: display extracted text -->
-            <child>
-              <object class="GtkTextView" id="text_view">
-                <property name="wrap-mode">word-char</property>
-                <property name="monospace">True</property>
-              </object>
-            </child>
-
-          </object>
-        </child>
-
-        <!-- Status Bar -->
-        <child>
-          <object class="GtkLabel" id="status_label">
-            <property name="label">Ready</property>
-            <property name="margin">8</property>
           </object>
         </child>
 
