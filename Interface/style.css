@@ -12,6 +12,7 @@ window {
   color: #ebebee;
   font-family: "Inter", "Cantarell", Sans, sans-serif;
   font-size: 13px;
+  border-radius: 10px;
 }
 
 /* ======================================================================== */
@@ -115,15 +116,17 @@ paned {
 
 paned>separator {
   background-color: #2b2c31;
-  min-width: 3px;
+  min-width: 5px;
   min-height: 3px;
   transition: background-color 120ms ease;
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 scrolledwindow {
   background-color: #141518;
   border: 1px solid #2b2c31;
-  border-radius: 10px;
+  border-radius: 8px;
   margin: 10px;
 }
 
@@ -196,7 +199,7 @@ textview selection {
 
 #status_label {
   color: #9a9ba3;
-  font-size: 12.5px;
+  font-size: 15px;
 }
 
 /* Spinner - accent but only visible when active */
