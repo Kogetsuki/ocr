@@ -209,6 +209,10 @@ void on_open_clicked()
     original_pixbuf = gdk_pixbuf_new_from_file(selected_file, NULL);
     update_image_scaling();
 
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
+    gtk_text_buffer_set_text(buffer, "", -1);
+    gtk_widget_set_sensitive(GTK_WIDGET(save_button), FALSE);
+
     gtk_widget_set_sensitive(GTK_WIDGET(ocr_button), TRUE);
     gtk_label_set_text(status_label, "Image loaded");
   }
