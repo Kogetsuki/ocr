@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS =  -Wall -Wextra -Werror -g \
-					`pkg-config --cflags gtk+-3.0`
+					`pkg-config --cflags gtk+-3.0 --libs cairo`
 
 LDFLAGS = `pkg-config --libs gtk+-3.0`
 LDLIBS =  -L../Treatment -ltreatment \

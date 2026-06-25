@@ -38,9 +38,20 @@
         </child>
 
         <child>
-          <object class="GtkButton" id="save_button">
+          <object class="GtkButton" id="save_text_button">
             <property name="visible">True</property>
-            <property name="label">Save Text</property>
+            <property name="label">Save as Text</property>
+            <property name="sensitive">False</property>
+          </object>
+          <packing>
+            <property name="pack-type">start</property>
+          </packing>
+        </child>
+
+        <child>
+          <object class="GtkButton" id="save_pdf_button">
+            <property name="visible">True</property>
+            <property name="label">Save as PDF</property>
             <property name="sensitive">False</property>
           </object>
           <packing>

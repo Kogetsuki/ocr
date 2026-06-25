@@ -1,3 +1,5 @@
+#include <cairo-pdf.h>
+#include <cairo.h>
 #include <gtk/gtk.h>
 
 #include "../Treatment/seg.h"
@@ -13,7 +15,8 @@ static GtkTextView *text_view;
 
 static GtkButton *open_button;
 static GtkButton *ocr_button;
-static GtkButton *save_button;
+static GtkButton *save_text_button;
+static GtkButton *save_pdf_button;
 static GtkButton *quit_button;
 
 static GtkLabel *status_label;
@@ -101,7 +104,8 @@ static gboolean update_text_view(gpointer data)
 
   gtk_spinner_stop(spinner);
   gtk_label_set_text(status_label, "OCR completed");
-  gtk_widget_set_sensitive(GTK_WIDGET(save_button), TRUE);
+  gtk_widget_set_sensitive(GTK_WIDGET(save_text_button), TRUE);
+  gtk_widget_set_sensitive(GTK_WIDGET(save_pdf_button), TRUE);
   gtk_widget_set_sensitive(GTK_WIDGET(ocr_button), TRUE);
 
   return FALSE;
@@ -211,7 +215,8 @@ void on_open_clicked()
 
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
     gtk_text_buffer_set_text(buffer, "", -1);
-    gtk_widget_set_sensitive(GTK_WIDGET(save_button), FALSE);
+    gtk_widget_set_sensitive(GTK_WIDGET(save_text_button), FALSE);
+    gtk_widget_set_sensitive(GTK_WIDGET(save_pdf_button), FALSE);
 
     gtk_widget_set_sensitive(GTK_WIDGET(ocr_button), TRUE);
     gtk_label_set_text(status_label, "Image loaded");
@@ -239,10 +244,10 @@ void on_ocr_clicked()
 }
 
 // ========================================================================
-// Save output
+// Save output as text
 // ========================================================================
 
-void on_save_clicked()
+void on_save_text_clicked()
 {
   GtkWidget *dialog = gtk_file_chooser_dialog_new(
       "Save Text",
@@ -255,15 +260,15 @@ void on_save_clicked()
       NULL
   );
 
+  gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), "output.txt");
+
   if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
   {
     char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
 
     GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
 
-    GtkTextIter start;
-    GtkTextIter end;
-
+    GtkTextIter start, end;
     gtk_text_buffer_get_bounds(buffer, &start, &end);
     gchar *text = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
 
@@ -278,6 +283,139 @@ void on_save_clicked()
     g_free(filename);
 
     gtk_label_set_text(status_label, "File saved");
+  }
+
+  gtk_widget_destroy(dialog);
+}
+
+// ========================================================================
+// Save output as pdf
+// ========================================================================
+
+void on_save_pdf_clicked()
+{
+  GtkWidget *dialog = gtk_file_chooser_dialog_new(
+      "Save as PDF",
+      window,
+      GTK_FILE_CHOOSER_ACTION_SAVE,
+      "_Cancel",
+      GTK_RESPONSE_CANCEL,
+      "_Save",
+      GTK_RESPONSE_ACCEPT,
+      NULL
+  );
+
+  gtk_file_chooser_set_current_name(GTK_FILE_CHOOSER(dialog), "output.pdf");
+
+  if (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT)
+  {
+    char *filename = gtk_file_chooser_get_filename(GTK_FILE_CHOOSER(dialog));
+
+    GtkTextBuffer *buffer = gtk_text_view_get_buffer(text_view);
+    GtkTextIter start, end;
+    gtk_text_buffer_get_bounds(buffer, &start, &end);
+    gchar *text = gtk_text_buffer_get_text(buffer, &start, &end, FALSE);
+
+    // Page setup
+    const double PAGE_W = 595.0;        // A4 in points (72pt = 1 inch)
+    const double PAGE_H = 842.0;
+    const double MARGIN = 50.0;
+    const double FONT_SZ = 11.0;
+    const double LINE_H = FONT_SZ * 1.5;
+    const double MAX_W = PAGE_W - 2 * MARGIN;
+
+    cairo_surface_t *surface = cairo_pdf_surface_create(filename, PAGE_W, PAGE_H);
+    cairo_t *cr = cairo_create(surface);
+
+    cairo_select_font_face(cr, "Monospace", CAIRO_FONT_SLANT_NORMAL, CAIRO_FONT_WEIGHT_NORMAL);
+    cairo_set_font_size(cr, FONT_SZ);
+    cairo_set_source_rgb(cr, 0, 0, 0);
+
+    double x = MARGIN;
+    double y = MARGIN + FONT_SZ;
+
+    // Split into lines and word-wrap each one
+    gchar **lines = g_strsplit(text, "\n", -1);
+
+    for (int i = 0; lines[i] != NULL; i++)
+    {
+      gchar *line = lines[i];
+
+      // Empty line = blank line
+      if (*line == '\0')
+      {
+        y += LINE_H;
+        if (y + LINE_H > PAGE_H - MARGIN)
+        {
+          cairo_show_page(cr);
+          y = MARGIN + FONT_SZ;
+        }
+        continue;
+      }
+
+      // Word-wrap: accumulate words until the line is too wide
+      gchar **words = g_strsplit(line, " ", -1);
+      gchar *current = g_strdup("");
+
+      for (int w = 0; words[w] != NULL; w++)
+      {
+        gchar *candidate = (*current == '\0') ? g_strdup(words[w]) : g_strdup_printf("%s %s", current, words[w]);
+
+        cairo_text_extents_t ext;
+        cairo_text_extents(cr, candidate, &ext);
+
+        if (ext.width > MAX_W && *current != '\0')
+        {
+          // Flush current line
+          cairo_move_to(cr, x, y);
+          cairo_show_text(cr, current);
+          y += LINE_H;
+
+          if (y + LINE_H > PAGE_H - MARGIN)
+          {
+            cairo_show_page(cr);
+            y = MARGIN + FONT_SZ;
+          }
+
+          g_free(current);
+          current = g_strdup(words[w]);
+        }
+        else
+        {
+          g_free(current);
+          current = candidate;
+          candidate = NULL;
+        }
+
+        g_free(candidate);
+      }
+
+      // Flush remainder
+      if (*current != '\0')
+      {
+        cairo_move_to(cr, x, y);
+        cairo_show_text(cr, current);
+        y += LINE_H;
+
+        if (y + LINE_H > PAGE_H - MARGIN)
+        {
+          cairo_show_page(cr);
+          y = MARGIN + FONT_SZ;
+        }
+      }
+
+      g_free(current);
+      g_strfreev(words);
+    }
+
+    g_strfreev(lines);
+    g_free(text);
+
+    cairo_destroy(cr);
+    cairo_surface_destroy(surface);
+    g_free(filename);
+
+    gtk_label_set_text(status_label, "PDF saved");
   }
 
   gtk_widget_destroy(dialog);
@@ -313,7 +451,8 @@ int main(void)
   status_label = GTK_LABEL(gtk_builder_get_object(builder, "status_label"));
   open_button = GTK_BUTTON(gtk_builder_get_object(builder, "open_button"));
   ocr_button = GTK_BUTTON(gtk_builder_get_object(builder, "ocr_button"));
-  save_button = GTK_BUTTON(gtk_builder_get_object(builder, "save_button"));
+  save_text_button = GTK_BUTTON(gtk_builder_get_object(builder, "save_text_button"));
+  save_pdf_button = GTK_BUTTON(gtk_builder_get_object(builder, "save_pdf_button"));
   quit_button = GTK_BUTTON(gtk_builder_get_object(builder, "quit_button"));
 
   // Prevent panel resizing
@@ -322,7 +461,8 @@ int main(void)
   // Buttons connection
   g_signal_connect(open_button, "clicked", G_CALLBACK(on_open_clicked), NULL);
   g_signal_connect(ocr_button, "clicked", G_CALLBACK(on_ocr_clicked), NULL);
-  g_signal_connect(save_button, "clicked", G_CALLBACK(on_save_clicked), NULL);
+  g_signal_connect(save_text_button, "clicked", G_CALLBACK(on_save_text_clicked), NULL);
+  g_signal_connect(save_pdf_button, "clicked", G_CALLBACK(on_save_pdf_clicked), NULL);
   g_signal_connect(quit_button, "clicked", G_CALLBACK(gtk_main_quit), NULL);
 
   // Panel size allocation connction
