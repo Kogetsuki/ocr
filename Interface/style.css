@@ -1,0 +1,207 @@
+/* ======================================================================== */
+/* GLOBAL APP STYLE                                                         */
+/* ======================================================================== */
+
+* {
+  outline: none;
+  -gtk-icon-shadow: none;
+}
+
+window {
+  background-color: #1a1b1e;
+  color: #ebebee;
+  font-family: "Inter", "Cantarell", Sans, sans-serif;
+  font-size: 13px;
+}
+
+/* ======================================================================== */
+/* HEADER BAR                                                               */
+/* ======================================================================== */
+
+headerbar {
+  background-color: #232429;
+  background-image: none;
+  border-bottom: 1px solid #2b2c31;
+  padding: 2px 10px;
+  min-height: 50px;
+}
+
+headerbar.titlebar {
+  background-image: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+headerbar .title {
+  color: #ebebee;
+  font-weight: 600;
+  font-size: 13.5px;
+  letter-spacing: 0.2px;
+}
+
+headerbar button {
+  background-color: #2a2b30;
+  background-image: none;
+  color: #d4d5da;
+  border: 1px solid #34353b;
+  border-radius: 8px;
+  padding: 6px 16px;
+  margin: 7px 3px;
+  font-weight: 500;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+headerbar button:hover {
+  background-color: #34353c;
+  border-color: #3e3f47;
+}
+
+headerbar button:active {
+  background-color: #1f2024;
+}
+
+headerbar button:disabled {
+  background-color: #212226;
+  color: #5b5c63;
+  border-color: #292a2e;
+}
+
+headerbar button:focus {
+  box-shadow: 0 0 0 2px rgba(79, 134, 198, 0.45);
+}
+
+/* Primary action - accentuated */
+#ocr_button {
+  background-color: #3f6fa3;
+  border-color: #4f86c6;
+  color: #f4f8fc;
+}
+
+#ocr_button:hover {
+  background-color: #4a7eb7;
+  border-color: #5f95d3;
+}
+
+#ocr_button:active {
+  background-color: #375f8c;
+}
+
+#ocr_button:disabled {
+  background-color: #28384a;
+  border-color: #2c3e52;
+  color: #6c7f93;
+}
+
+/* Quit - present but visually quiet until interacted with */
+#quit_button {
+  background-color: transparent;
+  border-color: #34353b;
+  color: #b0b1b7;
+}
+
+#quit_button:hover {
+  background-color: #332626;
+  border-color: #4a3434;
+  color: #d99c9c;
+}
+
+/* ======================================================================== */
+/* MAIN AREA / PANED                                                        */
+/* ======================================================================== */
+
+paned {
+  background-color: #1a1b1e;
+}
+
+paned>separator {
+  background-color: #2b2c31;
+  min-width: 3px;
+  min-height: 3px;
+  transition: background-color 120ms ease;
+}
+
+scrolledwindow {
+  background-color: #141518;
+  border: 1px solid #2b2c31;
+  border-radius: 10px;
+  margin: 10px;
+}
+
+scrolledwindow>undershoot,
+scrolledwindow>overshoot {
+  background: none;
+  border: none;
+}
+
+/* Image preview panel */
+#image_preview {
+  background-color: #131518;
+}
+
+/* ======================================================================== */
+/* SCROLLBARS                                                               */
+/* ======================================================================== */
+
+scrollbar {
+  background-color: transparent;
+  border: none;
+}
+
+scrollbar slider {
+  background-color: #3a3b42;
+  border-radius: 6px;
+  min-width: 8px;
+  min-height: 8px;
+}
+
+scrollbar slider:hover {
+  background-color: #4a4b54;
+}
+
+scrollbar slider:active {
+  background-color: #4f86c6;
+}
+
+/* ======================================================================== */
+/* TEXT VIEW                                                                */
+/* ======================================================================== */
+
+textview {
+  background-color: #141518;
+  color: #e6e7ea;
+  caret-color: #6fa8e0;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
+  font-size: 13px;
+  padding: 14px;
+}
+
+textview text {
+  background-color: #141518;
+  color: #ffffff;
+}
+
+textview selection {
+  background-color: #4f86c6;
+  color: #ffffff;
+}
+
+/* ======================================================================== */
+/* STATUS BAR                                                               */
+/* ======================================================================== */
+
+#status_bar {
+  background-color: #1c1c21;
+  border-top: 1px solid #2b2c31;
+}
+
+#status_label {
+  color: #9a9ba3;
+  font-size: 12.5px;
+}
+
+/* Spinner - accent but only visible when active */
+spinner {
+  color: #4f86c6;
+  min-width: 14px;
+  min-height: 14px;
+}
