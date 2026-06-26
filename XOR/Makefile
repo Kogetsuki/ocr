@@ -13,7 +13,7 @@ $(NAME): $(OBJS)
 	gcc -Wall -Wextra -Werror -c $< -o $@
 
 clean:
-	rm -f $(OBJS) *.d
+	rm -f $(OBJS) *.d *.a
 
 fclean: clean
 	rm -f $(NAME)

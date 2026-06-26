@@ -7,10 +7,10 @@ LDLIBS =  -L../Treatment -ltreatment \
 					-L../XOR -lxor \
 					-lSDL_image -lSDL -lm
 
-SRCS = 4puterscanread.c
+SRCS = ocr.c
 OBJS = $(SRCS:.c=.o)
 
-NAME = 4puterscanread
+NAME = ocr
 
 all: libs $(NAME)
 

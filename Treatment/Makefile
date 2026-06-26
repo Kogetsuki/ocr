@@ -16,7 +16,7 @@ $(NAME): $(OBJS)
 	gcc $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) *.d
+	rm -f $(OBJS) *.d *.a .BaW .car .out
 
 fclean: clean
 	rm -f $(NAME)
