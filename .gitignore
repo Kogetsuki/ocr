@@ -6,7 +6,7 @@
 main
 a.out
 *.out
-4puterscanread
+ocr
 
 # objects
 *.o

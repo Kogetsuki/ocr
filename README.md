@@ -13,7 +13,8 @@ This project takes an image containing printed or handwritten text and extracts 
 ├── Interface/      GTK3 desktop application (UI, layout, CSS)
 ├── Treatment/      Image preprocessing and segmentation
 ├── XOR/            Neural network (XOR-based, character classifier)
-├── test_ocr.sh     End-to-end test script
+├── tests/          Unit and end-to-end test suite
+├── ocr_e2e.sh      End-to-end test script
 └── README.md
 ```
 
@@ -61,34 +62,18 @@ The graphical front-end. Calls into `libtreatment.a` and `libxor.a` to run the f
 
 | File | Role |
 |---|---|
-| `4puterscanread.c` | Application logic — signal handlers, threading, image scaling |
-| `4puterscanread.glade` | UI layout (GtkBuilder XML) |
+| `ocr.c` | Application logic — signal handlers, threading, image scaling |
+| `ocr.glade` | UI layout (GtkBuilder XML) |
 | `style.css` | Dark theme stylesheet |
-| `logo_ocr.png` | Application icon |
 | `finalresult.txt` | OCR output written here by the pipeline, then read by the UI |
 | `Makefile` | Builds the final binary |
 
 ---
 
 ## Building
+**Dependencies**:
 
-Each module has its own `Makefile`. Build in order:
-
-```bash
-# 1. Build the image processing library
-make -C Treatment/
-
-# 2. Build the neural network library
-make -C XOR/
-
-# 3. Build the interface
-make -C Interface/
-
-# 4. Launch the interface
-cd Interface && ./4puterscanread
-```
-
-Dependencies: `GTK+ 3`, `GLib`, `Cairo`, `GDK-PixBuf` — all standard on any GNOME-based Linux distribution.
+`GTK+ 3`, `GLib`, `Cairo`, `GDK-PixBuf` — all standard on any GNOME-based Linux distribution.
 
 ```bash
 # Debian / Ubuntu
@@ -97,7 +82,35 @@ sudo apt install libgtk-3-dev
 # Arch
 sudo pacman -S gtk3
 ```
+**Build in order** (each module has its own `Makefile`):
 
+```bash
+# 1. Build the image processing library
+make -C Treatment
+
+# 2. Build the neural network library
+make -C XOR
+
+# 3. Build the interface
+make -C Interface
+
+# 4. Launch the interface
+cd Interface && ./ocr
+```
+**Or run the end-to-end building script:**
+```bash
+./ocr_e2e.sh <option>
+```
+Available options:
+
+| Option | Description |
+|--------|-------------|
+| `deps` | Check for and install required dependencies. |
+| `compile` | Compile all project modules. |
+| `run` | Launch the graphical user interface. |
+| `clean` | Remove compiled files and build artifacts. |
+| `all` | Execute all steps (clean, install/check dependencies, compile, and launch the application). |
+| `help` | Display the script help message. |
 ---
 
 ## Using the Application
@@ -148,15 +161,49 @@ Several sample images are provided in `Treatment/tests/`:
 
 ---
 
-## End-to-End Test
+## Testing
+The test suite lives in `tests/` and is split into unit tests (C) and an end-to-end shell suite.
 
-A shell script is provided to run the pipeline without the GUI:
-
-```bash
-./test_ocr.sh
+```
+tests/
+├── Makefile/              builds and runs everything
+├── test_treatment.c       unit tests for the Treatment module
+├── test_xor.c             unit tests for the XOR neural network
+└── test_suite.sh          end-to-end pipeline tests (bash)
 ```
 
-This exercises the Treatment and XOR modules directly and checks output against expected results.
+**Run everything:**
+```bash
+make -C tests
+```
+
+**Run only unit tests:**
+```bash
+make -C tests unit
+```
+
+**Run only the end-to-end suite:**
+```bash
+make -C tests e2e
+```
+
+**Run a single end-to-end test by name:**
+```bash
+./tests/test_suite.sh -k alphabet
+```
+
+**Verbose mode (shows the first lines of OCR output for each image):**
+```bash
+./tests/test_suite.sh -v
+```
+
+**What is tested**
+| File | Coverage |
+|---|---|
+| `test_treatment.c` | `get_pixel`/`put_pixel` roundtrip and boundary behavior <br> `new_caracter`/`caracter_free` (null check, table zeroed, linked list) <br> `new_line`/`new_column`/`free_line`/`free_column` (struct initialisation) <br> `seg()` smoke tests (no crash, `.BaW` and `.car` produced) |
+| `test_xor.c` | `Transform()` — all 59 outputs printable, covers A–Z and a–z, no duplicate mapping <br> `InitialiseTarget()` — one-hot encoding, hot index matches `i % 59` <br> `RandomInit()` — weights non-zero, in `[-0.5, 0.5]`, two calls differ <br> `launcher()` / `Run()` / `FileParser1()` integration (skips gracefully if `.car` absent) |
+| `test_suite.sh` | Build artefacts presents, PNG integrity (magic bytes), full pipeline on every test image, output quality (non-empty, printable, size), interface file checks |
+
 
 ## Known Limitations
 
