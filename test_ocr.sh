@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Automated test automatisé
+# Automated test
 # Usage : ./test_ocr.sh [option]
 # Options : all, deps, compile, run, clean, test
 

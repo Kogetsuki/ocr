@@ -37,14 +37,25 @@
           </packing>
         </child>
 
+        <!-- RIGHT SIDE BUTTONS -->
         <child>
-          <object class="GtkButton" id="save_text_button">
+          <object class="GtkButton" id="quit_button">
             <property name="visible">True</property>
-            <property name="label">Save as Text</property>
-            <property name="sensitive">False</property>
+            <property name="label">Quit</property>
           </object>
           <packing>
-            <property name="pack-type">start</property>
+            <property name="pack-type">end</property>
+          </packing>
+        </child>
+
+        <!-- Spacer -->
+        <child>
+          <object class="GtkBox">
+            <property name="visible">True</property>
+            <property name="hexpand">True</property>
+          </object>
+          <packing>
+            <property name="pack-type">end</property>
           </packing>
         </child>
 
@@ -55,15 +66,15 @@
             <property name="sensitive">False</property>
           </object>
           <packing>
-            <property name="pack-type">start</property>
+            <property name="pack-type">end</property>
           </packing>
         </child>
 
-        <!-- RIGHT SIDE -->
         <child>
-          <object class="GtkButton" id="quit_button">
+          <object class="GtkButton" id="save_text_button">
             <property name="visible">True</property>
-            <property name="label">Quit</property>
+            <property name="label">Save as Text</property>
+            <property name="sensitive">False</property>
           </object>
           <packing>
             <property name="pack-type">end</property>
