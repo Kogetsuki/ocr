@@ -439,7 +439,7 @@ int main(void)
   );
 
   // Build window
-  GtkBuilder *builder = gtk_builder_new_from_file("4puterscanread.glade");
+  GtkBuilder *builder = gtk_builder_new_from_file("ocr.glade");
 
   // Retrieve all objects
   window = GTK_WINDOW(gtk_builder_get_object(builder, "main_window"));

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Automated test
-# Usage : ./test_ocr.sh [option]
+# Usage : ./ocr_e2e.sh [option]
 # Options : all, deps, compile, run, clean, test
 
 set -e
@@ -18,6 +18,7 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 INTERFACE_DIR="$PROJECT_DIR/Interface"
 TREATMENT_DIR="$PROJECT_DIR/Treatment"
 XOR_DIR="$PROJECT_DIR/XOR"
+TESTS_DIR="$PROJECT_DIR/tests"
 
 # Display functions
 print_header() {
@@ -106,6 +107,10 @@ clean_all() {
   echo "Cleaning Interface..."
   cd "$INTERFACE_DIR"
   make fclean || true
+
+  echo "Cleaning Tests..."
+  cd "$TESTS_DIR"
+  make clean || true
   
   print_success "Cleaning completed"
   echo ""
@@ -148,8 +153,8 @@ compile_project() {
   echo ""
   
   # Check the exe was created
-  if [ -f "$INTERFACE_DIR/4puterscanread" ]; then
-    print_success "$INTERFACE_DIR/4puterscanread executable created"
+  if [ -f "$INTERFACE_DIR/ocr" ]; then
+    print_success "$INTERFACE_DIR/ocr executable created"
   else
     print_error "Executable not found"
     return 1
@@ -180,7 +185,7 @@ run_interface() {
   
   setup_display
   
-  if [ ! -f "$INTERFACE_DIR/4puterscanread" ]; then
+  if [ ! -f "$INTERFACE_DIR/ocr" ]; then
     print_error "Executable not found. Compile first with : $0 compile"
     return 1
   fi
@@ -188,8 +193,8 @@ run_interface() {
   echo "Launching from : $INTERFACE_DIR"
   cd "$INTERFACE_DIR"
   
-  if [ ! -f "4puterscanread.glade" ]; then
-    print_error "4puterscanread.glade file not found"
+  if [ ! -f "ocr.glade" ]; then
+    print_error "ocr.glade file not found"
     return 1
   fi
   
@@ -199,13 +204,13 @@ run_interface() {
   echo "(UI should open in a new window)"
   echo ""
   
-  ./4puterscanread
+  ./ocr
 }
 
 # 6. Help menu
 show_help() {
   cat << EOF
-${BLUE}OCR 4puterscanread - WSL Testing Script${NC}
+${BLUE}OCR ocr - WSL Testing Script${NC}
 
 ${YELLOW}Usage:${NC}
   $0 [option]
